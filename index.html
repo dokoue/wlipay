@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Wli Scanner</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0; font-family: sans-serif; }
+        button { padding: 15px 30px; font-size: 18px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <button onclick="startScan()">Ouvrir le Scanner Wli</button>
+
+    <script>
+        const webapp = window.Telegram.WebApp;
+        webapp.ready();
+        webapp.expand(); // Affiche la webapp en plein écran
+
+        function startScan() {
+            webapp.showScanQrPopup({
+                text: "Scannez le code du client"
+            }, function(text) {
+                webapp.sendData(text); // Renvoie l'ID au bot
+                webapp.close(); // Ferme la fenêtre
+                return true;
+            });
+        }
+        
+        // Optionnel : Lancer le scan dès l'ouverture
+        // startScan(); 
+    </script>
+</body>
+</html>

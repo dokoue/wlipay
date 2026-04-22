@@ -1,38 +1,66 @@
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    const statusDisplay = document.getElementById('status');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wli Scanner</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #ffffff; margin: 0; padding: 20px; color: #333; }
+        #reader { width: 100%; max-width: 400px; margin: 20px auto; border-radius: 15px; overflow: hidden; border: 2px solid #0088cc; background: #000; }
+        .status { margin-top: 20px; font-weight: bold; font-size: 1.1em; }
+        #start-btn { display: none; padding: 15px 30px; background: #0088cc; color: white; border: none; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,136,204,0.3); }
+        .logo { font-size: 24px; font-weight: bold; color: #0088cc; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="logo">Wli Pay 🚀</div>
+    <div id="reader"></div>
     
-    // 1. Initialisation du scanner sur l'élément 'reader'
-    const html5QrCode = new Html5Qrcode("reader");
+    <button id="start-btn" onclick="startScanner()">🔘 Activer la caméra</button>
+    
+    <div id="status" class="status">Initialisation...</div>
 
-    const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-    // 2. Fonction de démarrage automatique
-    function startScanner() {
-        // 'environment' force l'utilisation de la caméra arrière
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-        .catch((err) => {
-            statusDisplay.innerText = "❌ Erreur caméra : " + err;
-            statusDisplay.style.color = "red";
+        const statusDisplay = document.getElementById('status');
+        const startBtn = document.getElementById('start-btn');
+        const html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+        function onScanSuccess(decodedText) {
+            if (navigator.vibrate) navigator.vibrate(100);
+            statusDisplay.innerText = "✅ Succès !";
+            statusDisplay.style.color = "green";
+            
+            html5QrCode.stop().then(() => {
+                tg.sendData(decodedText);
+            }).catch(() => tg.sendData(decodedText));
+        }
+
+        function startScanner() {
+            startBtn.style.display = "none"; // On cache le bouton si on tente de démarrer
+            statusDisplay.innerText = "🔄 Accès caméra en cours...";
+
+            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+            .then(() => {
+                statusDisplay.innerText = "📷 Visez le QR Code";
+                statusDisplay.style.color = "#0088cc";
+            })
+            .catch((err) => {
+                console.error(err);
+                statusDisplay.innerText = "⚠️ Cliquez sur le bouton pour démarrer";
+                startBtn.style.display = "inline-block"; // On montre le bouton si l'auto-start échoue
+            });
+        }
+
+        // On tente le démarrage automatique après 500ms
+        window.addEventListener('load', () => {
+            setTimeout(startScanner, 500);
         });
-    }
-
-    function onScanSuccess(decodedText, decodedResult) {
-        if (navigator.vibrate) navigator.vibrate(100);
-        
-        statusDisplay.innerText = "✅ Scan réussi !";
-        statusDisplay.style.color = "green";
-
-        // Arrêter la caméra avant de renvoyer les données
-        html5QrCode.stop().then(() => {
-            tg.sendData(decodedText);
-        }).catch(() => {
-            tg.sendData(decodedText); // On envoie quand même si le stop échoue
-        });
-    }
-
-    // Lancer le scan dès que la page est prête
-    window.addEventListener('load', startScanner);
-</script>
+    </script>
+</body>
+</html>

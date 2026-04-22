@@ -1,46 +1,38 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wli Scanner</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f9; margin: 0; padding: 20px; }
-        #reader { width: 100%; max-width: 500px; margin: auto; border-radius: 10px; overflow: hidden; }
-        .status { margin-top: 20px; font-weight: bold; color: #555; }
-        button { padding: 10px 20px; background: #0088cc; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <h2>🚀 Wli Scanner</h2>
-    <div id="reader"></div>
-    <div id="status" class="status">En attente de scan...</div>
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Agrandit la WebApp pour occuper tout l'écran
+    const statusDisplay = document.getElementById('status');
+    
+    // 1. Initialisation du scanner sur l'élément 'reader'
+    const html5QrCode = new Html5Qrcode("reader");
 
-        function onScanSuccess(decodedText, decodedResult) {
-            // Optionnel : Vibration pour confirmer le scan
-            if (navigator.vibrate) navigator.vibrate(100);
+    const config = { fps: 15, qrbox: { width: 250, height: 250 } };
 
-            document.getElementById('status').innerText = "✅ Scan réussi ! Transmission...";
-            document.getElementById('status').style.color = "green";
+    // 2. Fonction de démarrage automatique
+    function startScanner() {
+        // 'environment' force l'utilisation de la caméra arrière
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch((err) => {
+            statusDisplay.innerText = "❌ Erreur caméra : " + err;
+            statusDisplay.style.color = "red";
+        });
+    }
 
-            // ENVOI AU BOT : C'est ici que la magie opère
+    function onScanSuccess(decodedText, decodedResult) {
+        if (navigator.vibrate) navigator.vibrate(100);
+        
+        statusDisplay.innerText = "✅ Scan réussi !";
+        statusDisplay.style.color = "green";
+
+        // Arrêter la caméra avant de renvoyer les données
+        html5QrCode.stop().then(() => {
             tg.sendData(decodedText);
-        }
+        }).catch(() => {
+            tg.sendData(decodedText); // On envoie quand même si le stop échoue
+        });
+    }
 
-        function onScanFailure(error) {
-            // On ignore les erreurs de scan continu pour ne pas polluer la console
-        }
-
-        let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: {width: 250, height: 250} }
-        );
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-    </script>
-</body>
-</html>
+    // Lancer le scan dès que la page est prête
+    window.addEventListener('load', startScanner);
+</script>

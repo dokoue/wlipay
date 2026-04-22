@@ -3,33 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <title>Wli Scanner</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f0f0; font-family: sans-serif; }
-        button { padding: 15px 30px; font-size: 18px; background: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        body { font-family: sans-serif; text-align: center; background: #f4f4f9; margin: 0; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: auto; border-radius: 10px; overflow: hidden; }
+        .status { margin-top: 20px; font-weight: bold; color: #555; }
+        button { padding: 10px 20px; background: #0088cc; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <button onclick="startScan()">Ouvrir le Scanner Wli</button>
+    <h2>🚀 Wli Scanner</h2>
+    <div id="reader"></div>
+    <div id="status" class="status">En attente de scan...</div>
 
     <script>
-        const webapp = window.Telegram.WebApp;
-        webapp.ready();
-        webapp.expand(); // Affiche la webapp en plein écran
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Agrandit la WebApp pour occuper tout l'écran
 
-        function startScan() {
-            webapp.showScanQrPopup({
-                text: "Scannez le code du client"
-            }, function(text) {
-                webapp.sendData(text); // Renvoie l'ID au bot
-                webapp.close(); // Ferme la fenêtre
-                return true;
-            });
+        function onScanSuccess(decodedText, decodedResult) {
+            // Optionnel : Vibration pour confirmer le scan
+            if (navigator.vibrate) navigator.vibrate(100);
+
+            document.getElementById('status').innerText = "✅ Scan réussi ! Transmission...";
+            document.getElementById('status').style.color = "green";
+
+            // ENVOI AU BOT : C'est ici que la magie opère
+            tg.sendData(decodedText);
         }
-        
-        // Optionnel : Lancer le scan dès l'ouverture
-        startScan(); 
+
+        function onScanFailure(error) {
+            // On ignore les erreurs de scan continu pour ne pas polluer la console
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: {width: 250, height: 250} }
+        );
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     </script>
 </body>
 </html>

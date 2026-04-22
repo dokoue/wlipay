@@ -1,73 +1,26 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wli Pay Scanner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; margin: 0; padding: 20px; background-color: #f0f2f5; }
-        #reader { 
-            width: 100%; 
-            max-width: 400px; 
-            min-height: 300px; /* Force la visibilité même si vide */
-            margin: auto; 
-            background: #000; 
-            border-radius: 12px;
-            border: 3px solid #0088cc;
-        }
-        #btn-start {
-            display: block; width: 80%; margin: 20px auto; padding: 15px;
-            background: #0088cc; color: #fff; border: none; border-radius: 8px;
-            font-size: 16px; font-weight: bold; cursor: pointer;
-        }
-        .info { margin-top: 15px; color: #666; font-size: 14px; }
-    </style>
 </head>
-<body>
-    <h2 style="color: #0088cc;">Wli Scanner 🚀</h2>
-    
-    <div id="reader"></div>
-    
-    <button id="btn-start">📸 ALLUMER LA CAMÉRA</button>
-    
-    <div id="status" class="info">Appuyez sur le bouton pour scanner</div>
-
+<body style="background: #fff; text-align: center; padding-top: 50px;">
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        tg.ready();
 
-        const html5QrCode = new Html5Qrcode("reader");
-        const btn = document.getElementById('btn-start');
-        const status = document.getElementById('status');
-
-        const startScanner = () => {
-            status.innerText = "🔄 Initialisation de la caméra...";
-            btn.style.display = "none";
-
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                config, 
-                (decodedText) => {
-                    // Succès du scan
-                    tg.sendData(decodedText);
-                }
-            ).catch(err => {
-                status.innerText = "❌ Erreur : " + err;
-                btn.style.display = "block";
-                console.error(err);
-            });
-        };
-
-        btn.addEventListener('click', startScanner);
-
-        // Alerte de diagnostic si Telegram n'est pas détecté
-        if (!tg.initData) {
-            console.warn("L'application n'est pas lancée depuis Telegram");
-        }
+        // On lance le scanner natif de Telegram immédiatement
+        tg.showScanQrPopup({
+            text: "Scannez le QR Code Wli du client"
+        }, function(text) {
+            // Envoie la donnée au bot
+            tg.sendData(text);
+            // Ferme le scanner
+            tg.closeScanQrPopup();
+            // Ferme la Mini App
+            tg.close();
+            return true;
+        });
     </script>
+    <p>Ouverture du scanner...</p>
 </body>
 </html>

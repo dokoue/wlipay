@@ -3,64 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wli Scanner</title>
+    <title>Wli Pay Scanner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #ffffff; margin: 0; padding: 20px; color: #333; }
-        #reader { width: 100%; max-width: 400px; margin: 20px auto; border-radius: 15px; overflow: hidden; border: 2px solid #0088cc; background: #000; }
-        .status { margin-top: 20px; font-weight: bold; font-size: 1.1em; }
-        #start-btn { display: none; padding: 15px 30px; background: #0088cc; color: white; border: none; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,136,204,0.3); }
-        .logo { font-size: 24px; font-weight: bold; color: #0088cc; margin-bottom: 10px; }
+        body { font-family: sans-serif; text-align: center; margin: 0; padding: 20px; background-color: #f0f2f5; }
+        #reader { 
+            width: 100%; 
+            max-width: 400px; 
+            min-height: 300px; /* Force la visibilité même si vide */
+            margin: auto; 
+            background: #000; 
+            border-radius: 12px;
+            border: 3px solid #0088cc;
+        }
+        #btn-start {
+            display: block; width: 80%; margin: 20px auto; padding: 15px;
+            background: #0088cc; color: #fff; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .info { margin-top: 15px; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="logo">Wli Pay 🚀</div>
+    <h2 style="color: #0088cc;">Wli Scanner 🚀</h2>
+    
     <div id="reader"></div>
     
-    <button id="start-btn" onclick="startScanner()">🔘 Activer la caméra</button>
+    <button id="btn-start">📸 ALLUMER LA CAMÉRA</button>
     
-    <div id="status" class="status">Initialisation...</div>
+    <div id="status" class="info">Appuyez sur le bouton pour scanner</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const statusDisplay = document.getElementById('status');
-        const startBtn = document.getElementById('start-btn');
         const html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+        const btn = document.getElementById('btn-start');
+        const status = document.getElementById('status');
 
-        function onScanSuccess(decodedText) {
-            if (navigator.vibrate) navigator.vibrate(100);
-            statusDisplay.innerText = "✅ Succès !";
-            statusDisplay.style.color = "green";
-            
-            html5QrCode.stop().then(() => {
-                tg.sendData(decodedText);
-            }).catch(() => tg.sendData(decodedText));
-        }
+        const startScanner = () => {
+            status.innerText = "🔄 Initialisation de la caméra...";
+            btn.style.display = "none";
 
-        function startScanner() {
-            startBtn.style.display = "none"; // On cache le bouton si on tente de démarrer
-            statusDisplay.innerText = "🔄 Accès caméra en cours...";
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-            .then(() => {
-                statusDisplay.innerText = "📷 Visez le QR Code";
-                statusDisplay.style.color = "#0088cc";
-            })
-            .catch((err) => {
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                (decodedText) => {
+                    // Succès du scan
+                    tg.sendData(decodedText);
+                }
+            ).catch(err => {
+                status.innerText = "❌ Erreur : " + err;
+                btn.style.display = "block";
                 console.error(err);
-                statusDisplay.innerText = "⚠️ Cliquez sur le bouton pour démarrer";
-                startBtn.style.display = "inline-block"; // On montre le bouton si l'auto-start échoue
             });
-        }
+        };
 
-        // On tente le démarrage automatique après 500ms
-        window.addEventListener('load', () => {
-            setTimeout(startScanner, 500);
-        });
+        btn.addEventListener('click', startScanner);
+
+        // Alerte de diagnostic si Telegram n'est pas détecté
+        if (!tg.initData) {
+            console.warn("L'application n'est pas lancée depuis Telegram");
+        }
     </script>
 </body>
 </html>
